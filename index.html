@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Label Detection</title>
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <script>
+    // Function to preview the image before upload
+    function previewImage(event) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const output = document.getElementById('selected-image');
+        output.src = reader.result;
+        output.style.display = 'block'; // Show the image container
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    }
+
+    // Function to handle image upload and display results
+    async function showUploadedData(event) {
+      event.preventDefault(); // Prevent the default form submission
+      const formData = new FormData(document.getElementById('upload-form'));
+
+      try {
+        // Send the image data to the server
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        // Check if the response is okay (status in the range 200-299)
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+
+        // Show uploaded image
+        const uploadedImage = document.getElementById('uploaded-image');
+        uploadedImage.src = data.imageUrl; // Use the image URL from the response
+        uploadedImage.style.display = 'block'; // Show uploaded image
+
+        // Show detected labels
+        const labelsList = document.getElementById('labels-list');
+        labelsList.innerHTML = ''; // Clear previous labels
+
+        data.labels.forEach(label => {
+          const li = document.createElement('li');
+          li.textContent = label;
+          labelsList.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('There was a problem with the upload. Please try again.');
+      }
+    }
+
+    // Add event listener to form submission
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('upload-form').addEventListener('submit', showUploadedData);
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Label Detection</h1>
+    <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+      <input type="file" name="image" accept="image/*" onchange="previewImage(event)" required>
+      <input type="submit" value="Upload Image">
+    </form>
+    
+    <!-- Preview the selected image -->
+    <div id="preview-container">
+      <h3>Selected Image Preview:</h3>
+      <img id="selected-image" style="display: none; max-width: 100%; height: auto;" alt="Selected Image">
+    </div>
+
+    <!-- After uploading, show the uploaded image and labels -->
+    <div id="results">
+      <h3>Uploaded Image and Detected Labels:</h3>
+      <img id="uploaded-image" style="display: none; max-width: 100%; height: auto;" alt="Uploaded Image">
+      <ul id="labels-list"></ul>
+    </div>
+  </div>
+</body>
+</html>
